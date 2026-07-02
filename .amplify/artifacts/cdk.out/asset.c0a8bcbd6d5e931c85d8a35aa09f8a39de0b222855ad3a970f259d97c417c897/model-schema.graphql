@@ -1,0 +1,80 @@
+enum UserRole {
+  CUSTOMER
+  DEALER
+  WORKSHOP
+  SALES
+  MANAGEMENT
+  ADMIN
+}
+
+enum ProductStatus {
+  ACTIVE
+  DISCONTINUED
+}
+
+enum WarrantyStatus {
+  ACTIVE
+  EXPIRED
+  VOIDED
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+type UserProfile @model @auth(rules: [{allow: owner, ownerField: "owner"},
+  {allow: groups, operations: [create, read, update, delete], groups: ["ADMIN"]},
+  {allow: groups, operations: [read], groups: ["MANAGEMENT", "SALES"]}])
+{
+  email: String!
+  name: String!
+  role: UserRole!
+  regionAssignment: String
+  workshopOrDealerId: String
+}
+
+type BatteryProduct @model @auth(rules: [{allow: groups, operations: [create, read, update, delete], groups: ["ADMIN"]},
+  {allow: groups, operations: [read], groups: ["MANAGEMENT", "SALES", "DEALER", "WORKSHOP", "CUSTOMER"]}])
+{
+  modelNumber: String!
+  batteryType: String!
+  capacity: String!
+  warrantyPeriodMonths: Int!
+  status: ProductStatus!
+}
+
+type WarrantyRegistration @model @auth(rules: [{allow: public, provider: identityPool, operations: [create]},
+  {allow: owner, operations: [create, read], ownerField: "owner"},
+  {allow: groups, operations: [create, read, update, delete], groups: ["ADMIN"]},
+  {allow: groups, operations: [create, read], groups: ["DEALER"]},
+  {allow: groups, operations: [read], groups: ["WORKSHOP", "SALES", "MANAGEMENT"]}])
+{
+  serialNumber: String! @index(queryField: "listWarrantyRegistrationBySerialNumber")
+  purchaseDate: AWSDate!
+  expiryDate: AWSDate!
+  customerName: String!
+  customerEmail: String!
+  customerPhone: String
+  purchaseFrom: String
+  status: WarrantyStatus!
+  registeredBy: String! @index(queryField: "listWarrantyRegistrationByRegisteredBy")
+  dealerId: String @index(queryField: "listWarrantyRegistrationByDealerId")
+  batteryProductId: String
+}
+
+type WarrantyClaim @model @auth(rules: [{allow: groups, operations: [create, read, update, delete], groups: ["ADMIN"]},
+  {allow: groups, operations: [create, read], groups: ["WORKSHOP"]},
+  {allow: groups, operations: [read], groups: ["MANAGEMENT", "SALES"]},
+  {allow: owner, operations: [read], ownerField: "owner"}])
+{
+  warrantyRegistrationId: String! @index(queryField: "listWarrantyClaimByWarrantyRegistrationId")
+  workshopId: String! @index(queryField: "listWarrantyClaimByWorkshopId")
+  failureDate: AWSDate!
+  claimDate: AWSDate!
+  failureDescription: String!
+  status: ClaimStatus!
+  resolutionDetails: String
+  adminNotes: String
+}

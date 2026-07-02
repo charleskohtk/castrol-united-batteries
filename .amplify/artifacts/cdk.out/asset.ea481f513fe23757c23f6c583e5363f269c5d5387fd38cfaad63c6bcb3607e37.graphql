@@ -1,0 +1,624 @@
+enum UserRole {
+  CUSTOMER
+  DEALER
+  WORKSHOP
+  SALES
+  MANAGEMENT
+  ADMIN
+}
+
+enum ProductStatus {
+  ACTIVE
+  DISCONTINUED
+}
+
+enum WarrantyStatus {
+  ACTIVE
+  EXPIRED
+  VOIDED
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+type UserProfile @aws_iam @aws_cognito_user_pools {
+  email: String!
+  name: String!
+  role: UserRole!
+  regionAssignment: String
+  workshopOrDealerId: String
+  id: ID!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+  owner: String
+}
+
+type BatteryProduct @aws_iam @aws_cognito_user_pools {
+  modelNumber: String!
+  batteryType: String!
+  capacity: String!
+  warrantyPeriodMonths: Int!
+  status: ProductStatus!
+  id: ID!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type WarrantyRegistration @aws_iam @aws_cognito_user_pools {
+  serialNumber: String!
+  purchaseDate: AWSDate!
+  expiryDate: AWSDate!
+  customerName: String!
+  customerEmail: String!
+  customerPhone: String
+  purchaseFrom: String
+  status: WarrantyStatus!
+  registeredBy: String!
+  dealerId: String
+  batteryProductId: String
+  id: ID!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+  owner: String
+}
+
+type WarrantyClaim @aws_iam @aws_cognito_user_pools {
+  warrantyRegistrationId: String!
+  workshopId: String!
+  failureDate: AWSDate!
+  claimDate: AWSDate!
+  failureDescription: String!
+  status: ClaimStatus!
+  resolutionDetails: String
+  adminNotes: String
+  id: ID!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+  owner: String
+}
+
+input AmplifyAIConversationTurnErrorInput {
+  errorType: String!
+  message: String!
+}
+
+input ModelStringInput {
+  ne: String
+  eq: String
+  le: String
+  lt: String
+  ge: String
+  gt: String
+  contains: String
+  notContains: String
+  between: [String]
+  beginsWith: String
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+  size: ModelSizeInput
+}
+
+input ModelIntInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+}
+
+input ModelFloatInput {
+  ne: Float
+  eq: Float
+  le: Float
+  lt: Float
+  ge: Float
+  gt: Float
+  between: [Float]
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+}
+
+input ModelBooleanInput {
+  ne: Boolean
+  eq: Boolean
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+}
+
+input ModelIDInput {
+  ne: ID
+  eq: ID
+  le: ID
+  lt: ID
+  ge: ID
+  gt: ID
+  contains: ID
+  notContains: ID
+  between: [ID]
+  beginsWith: ID
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+  size: ModelSizeInput
+}
+
+input ModelSubscriptionStringInput {
+  ne: String
+  eq: String
+  le: String
+  lt: String
+  ge: String
+  gt: String
+  contains: String
+  notContains: String
+  between: [String]
+  beginsWith: String
+  in: [String]
+  notIn: [String]
+}
+
+input ModelSubscriptionIntInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+  in: [Int]
+  notIn: [Int]
+}
+
+input ModelSubscriptionFloatInput {
+  ne: Float
+  eq: Float
+  le: Float
+  lt: Float
+  ge: Float
+  gt: Float
+  between: [Float]
+  in: [Float]
+  notIn: [Float]
+}
+
+input ModelSubscriptionBooleanInput {
+  ne: Boolean
+  eq: Boolean
+}
+
+input ModelSubscriptionIDInput {
+  ne: ID
+  eq: ID
+  le: ID
+  lt: ID
+  ge: ID
+  gt: ID
+  contains: ID
+  notContains: ID
+  between: [ID]
+  beginsWith: ID
+  in: [ID]
+  notIn: [ID]
+}
+
+enum ModelAttributeTypes {
+  binary
+  binarySet
+  bool
+  list
+  map
+  number
+  numberSet
+  string
+  stringSet
+  _null
+}
+
+input ModelSizeInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+}
+
+enum ModelSortDirection {
+  ASC
+  DESC
+}
+
+type ModelUserProfileConnection @aws_iam @aws_cognito_user_pools {
+  items: [UserProfile]!
+  nextToken: String
+}
+
+input ModelUserRoleInput {
+  eq: UserRole
+  ne: UserRole
+}
+
+input ModelUserProfileFilterInput {
+  email: ModelStringInput
+  name: ModelStringInput
+  role: ModelUserRoleInput
+  regionAssignment: ModelStringInput
+  workshopOrDealerId: ModelStringInput
+  id: ModelIDInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+  and: [ModelUserProfileFilterInput]
+  or: [ModelUserProfileFilterInput]
+  not: ModelUserProfileFilterInput
+  owner: ModelStringInput
+}
+
+type Query {
+  getUserProfile(id: ID!): UserProfile @aws_iam @aws_cognito_user_pools
+  listUserProfiles(filter: ModelUserProfileFilterInput, limit: Int, nextToken: String): ModelUserProfileConnection @aws_iam @aws_cognito_user_pools
+  getBatteryProduct(id: ID!): BatteryProduct @aws_iam @aws_cognito_user_pools
+  listBatteryProducts(filter: ModelBatteryProductFilterInput, limit: Int, nextToken: String): ModelBatteryProductConnection @aws_iam @aws_cognito_user_pools
+  getWarrantyRegistration(id: ID!): WarrantyRegistration @aws_iam @aws_cognito_user_pools
+  listWarrantyRegistrations(filter: ModelWarrantyRegistrationFilterInput, limit: Int, nextToken: String): ModelWarrantyRegistrationConnection @aws_iam @aws_cognito_user_pools
+  listWarrantyRegistrationBySerialNumber(serialNumber: String!, sortDirection: ModelSortDirection, filter: ModelWarrantyRegistrationFilterInput, limit: Int, nextToken: String): ModelWarrantyRegistrationConnection @aws_iam @aws_cognito_user_pools
+  listWarrantyRegistrationByRegisteredBy(registeredBy: String!, sortDirection: ModelSortDirection, filter: ModelWarrantyRegistrationFilterInput, limit: Int, nextToken: String): ModelWarrantyRegistrationConnection @aws_iam @aws_cognito_user_pools
+  listWarrantyRegistrationByDealerId(dealerId: String!, sortDirection: ModelSortDirection, filter: ModelWarrantyRegistrationFilterInput, limit: Int, nextToken: String): ModelWarrantyRegistrationConnection @aws_iam @aws_cognito_user_pools
+  getWarrantyClaim(id: ID!): WarrantyClaim @aws_iam @aws_cognito_user_pools
+  listWarrantyClaims(filter: ModelWarrantyClaimFilterInput, limit: Int, nextToken: String): ModelWarrantyClaimConnection @aws_iam @aws_cognito_user_pools
+  listWarrantyClaimByWarrantyRegistrationId(warrantyRegistrationId: String!, sortDirection: ModelSortDirection, filter: ModelWarrantyClaimFilterInput, limit: Int, nextToken: String): ModelWarrantyClaimConnection @aws_iam @aws_cognito_user_pools
+  listWarrantyClaimByWorkshopId(workshopId: String!, sortDirection: ModelSortDirection, filter: ModelWarrantyClaimFilterInput, limit: Int, nextToken: String): ModelWarrantyClaimConnection @aws_iam @aws_cognito_user_pools
+}
+
+input ModelUserProfileConditionInput {
+  email: ModelStringInput
+  name: ModelStringInput
+  role: ModelUserRoleInput
+  regionAssignment: ModelStringInput
+  workshopOrDealerId: ModelStringInput
+  and: [ModelUserProfileConditionInput]
+  or: [ModelUserProfileConditionInput]
+  not: ModelUserProfileConditionInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+  owner: ModelStringInput
+}
+
+input CreateUserProfileInput {
+  email: String!
+  name: String!
+  role: UserRole!
+  regionAssignment: String
+  workshopOrDealerId: String
+  id: ID
+}
+
+input UpdateUserProfileInput {
+  email: String
+  name: String
+  role: UserRole
+  regionAssignment: String
+  workshopOrDealerId: String
+  id: ID!
+}
+
+input DeleteUserProfileInput {
+  id: ID!
+}
+
+type Mutation {
+  createUserProfile(input: CreateUserProfileInput!, condition: ModelUserProfileConditionInput): UserProfile @aws_iam @aws_cognito_user_pools
+  updateUserProfile(input: UpdateUserProfileInput!, condition: ModelUserProfileConditionInput): UserProfile @aws_iam @aws_cognito_user_pools
+  deleteUserProfile(input: DeleteUserProfileInput!, condition: ModelUserProfileConditionInput): UserProfile @aws_iam @aws_cognito_user_pools
+  createBatteryProduct(input: CreateBatteryProductInput!, condition: ModelBatteryProductConditionInput): BatteryProduct @aws_iam @aws_cognito_user_pools
+  updateBatteryProduct(input: UpdateBatteryProductInput!, condition: ModelBatteryProductConditionInput): BatteryProduct @aws_iam @aws_cognito_user_pools
+  deleteBatteryProduct(input: DeleteBatteryProductInput!, condition: ModelBatteryProductConditionInput): BatteryProduct @aws_iam @aws_cognito_user_pools
+  createWarrantyRegistration(input: CreateWarrantyRegistrationInput!, condition: ModelWarrantyRegistrationConditionInput): WarrantyRegistration @aws_iam @aws_cognito_user_pools
+  updateWarrantyRegistration(input: UpdateWarrantyRegistrationInput!, condition: ModelWarrantyRegistrationConditionInput): WarrantyRegistration @aws_iam @aws_cognito_user_pools
+  deleteWarrantyRegistration(input: DeleteWarrantyRegistrationInput!, condition: ModelWarrantyRegistrationConditionInput): WarrantyRegistration @aws_iam @aws_cognito_user_pools
+  createWarrantyClaim(input: CreateWarrantyClaimInput!, condition: ModelWarrantyClaimConditionInput): WarrantyClaim @aws_iam @aws_cognito_user_pools
+  updateWarrantyClaim(input: UpdateWarrantyClaimInput!, condition: ModelWarrantyClaimConditionInput): WarrantyClaim @aws_iam @aws_cognito_user_pools
+  deleteWarrantyClaim(input: DeleteWarrantyClaimInput!, condition: ModelWarrantyClaimConditionInput): WarrantyClaim @aws_iam @aws_cognito_user_pools
+}
+
+input ModelSubscriptionUserProfileFilterInput {
+  email: ModelSubscriptionStringInput
+  name: ModelSubscriptionStringInput
+  role: ModelSubscriptionStringInput
+  regionAssignment: ModelSubscriptionStringInput
+  workshopOrDealerId: ModelSubscriptionStringInput
+  id: ModelSubscriptionIDInput
+  createdAt: ModelSubscriptionStringInput
+  updatedAt: ModelSubscriptionStringInput
+  and: [ModelSubscriptionUserProfileFilterInput]
+  or: [ModelSubscriptionUserProfileFilterInput]
+  owner: ModelStringInput
+}
+
+type Subscription {
+  onCreateUserProfile(filter: ModelSubscriptionUserProfileFilterInput, owner: String): UserProfile @aws_subscribe(mutations: ["createUserProfile"]) @aws_iam @aws_cognito_user_pools
+  onUpdateUserProfile(filter: ModelSubscriptionUserProfileFilterInput, owner: String): UserProfile @aws_subscribe(mutations: ["updateUserProfile"]) @aws_iam @aws_cognito_user_pools
+  onDeleteUserProfile(filter: ModelSubscriptionUserProfileFilterInput, owner: String): UserProfile @aws_subscribe(mutations: ["deleteUserProfile"]) @aws_iam @aws_cognito_user_pools
+  onCreateBatteryProduct(filter: ModelSubscriptionBatteryProductFilterInput): BatteryProduct @aws_subscribe(mutations: ["createBatteryProduct"]) @aws_iam @aws_cognito_user_pools
+  onUpdateBatteryProduct(filter: ModelSubscriptionBatteryProductFilterInput): BatteryProduct @aws_subscribe(mutations: ["updateBatteryProduct"]) @aws_iam @aws_cognito_user_pools
+  onDeleteBatteryProduct(filter: ModelSubscriptionBatteryProductFilterInput): BatteryProduct @aws_subscribe(mutations: ["deleteBatteryProduct"]) @aws_iam @aws_cognito_user_pools
+  onCreateWarrantyRegistration(filter: ModelSubscriptionWarrantyRegistrationFilterInput, owner: String): WarrantyRegistration @aws_subscribe(mutations: ["createWarrantyRegistration"]) @aws_iam @aws_cognito_user_pools
+  onUpdateWarrantyRegistration(filter: ModelSubscriptionWarrantyRegistrationFilterInput, owner: String): WarrantyRegistration @aws_subscribe(mutations: ["updateWarrantyRegistration"]) @aws_iam @aws_cognito_user_pools
+  onDeleteWarrantyRegistration(filter: ModelSubscriptionWarrantyRegistrationFilterInput, owner: String): WarrantyRegistration @aws_subscribe(mutations: ["deleteWarrantyRegistration"]) @aws_iam @aws_cognito_user_pools
+  onCreateWarrantyClaim(filter: ModelSubscriptionWarrantyClaimFilterInput, owner: String): WarrantyClaim @aws_subscribe(mutations: ["createWarrantyClaim"]) @aws_iam @aws_cognito_user_pools
+  onUpdateWarrantyClaim(filter: ModelSubscriptionWarrantyClaimFilterInput, owner: String): WarrantyClaim @aws_subscribe(mutations: ["updateWarrantyClaim"]) @aws_iam @aws_cognito_user_pools
+  onDeleteWarrantyClaim(filter: ModelSubscriptionWarrantyClaimFilterInput, owner: String): WarrantyClaim @aws_subscribe(mutations: ["deleteWarrantyClaim"]) @aws_iam @aws_cognito_user_pools
+}
+
+type ModelBatteryProductConnection @aws_iam @aws_cognito_user_pools {
+  items: [BatteryProduct]!
+  nextToken: String
+}
+
+input ModelProductStatusInput {
+  eq: ProductStatus
+  ne: ProductStatus
+}
+
+input ModelBatteryProductFilterInput {
+  modelNumber: ModelStringInput
+  batteryType: ModelStringInput
+  capacity: ModelStringInput
+  warrantyPeriodMonths: ModelIntInput
+  status: ModelProductStatusInput
+  id: ModelIDInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+  and: [ModelBatteryProductFilterInput]
+  or: [ModelBatteryProductFilterInput]
+  not: ModelBatteryProductFilterInput
+}
+
+input ModelBatteryProductConditionInput {
+  modelNumber: ModelStringInput
+  batteryType: ModelStringInput
+  capacity: ModelStringInput
+  warrantyPeriodMonths: ModelIntInput
+  status: ModelProductStatusInput
+  and: [ModelBatteryProductConditionInput]
+  or: [ModelBatteryProductConditionInput]
+  not: ModelBatteryProductConditionInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+}
+
+input CreateBatteryProductInput {
+  modelNumber: String!
+  batteryType: String!
+  capacity: String!
+  warrantyPeriodMonths: Int!
+  status: ProductStatus!
+  id: ID
+}
+
+input UpdateBatteryProductInput {
+  modelNumber: String
+  batteryType: String
+  capacity: String
+  warrantyPeriodMonths: Int
+  status: ProductStatus
+  id: ID!
+}
+
+input DeleteBatteryProductInput {
+  id: ID!
+}
+
+input ModelSubscriptionBatteryProductFilterInput {
+  modelNumber: ModelSubscriptionStringInput
+  batteryType: ModelSubscriptionStringInput
+  capacity: ModelSubscriptionStringInput
+  warrantyPeriodMonths: ModelSubscriptionIntInput
+  status: ModelSubscriptionStringInput
+  id: ModelSubscriptionIDInput
+  createdAt: ModelSubscriptionStringInput
+  updatedAt: ModelSubscriptionStringInput
+  and: [ModelSubscriptionBatteryProductFilterInput]
+  or: [ModelSubscriptionBatteryProductFilterInput]
+}
+
+type ModelWarrantyRegistrationConnection @aws_iam @aws_cognito_user_pools {
+  items: [WarrantyRegistration]!
+  nextToken: String
+}
+
+input ModelWarrantyStatusInput {
+  eq: WarrantyStatus
+  ne: WarrantyStatus
+}
+
+input ModelWarrantyRegistrationFilterInput {
+  serialNumber: ModelStringInput
+  purchaseDate: ModelStringInput
+  expiryDate: ModelStringInput
+  customerName: ModelStringInput
+  customerEmail: ModelStringInput
+  customerPhone: ModelStringInput
+  purchaseFrom: ModelStringInput
+  status: ModelWarrantyStatusInput
+  registeredBy: ModelStringInput
+  dealerId: ModelStringInput
+  batteryProductId: ModelStringInput
+  id: ModelIDInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+  and: [ModelWarrantyRegistrationFilterInput]
+  or: [ModelWarrantyRegistrationFilterInput]
+  not: ModelWarrantyRegistrationFilterInput
+  owner: ModelStringInput
+}
+
+input ModelWarrantyRegistrationConditionInput {
+  serialNumber: ModelStringInput
+  purchaseDate: ModelStringInput
+  expiryDate: ModelStringInput
+  customerName: ModelStringInput
+  customerEmail: ModelStringInput
+  customerPhone: ModelStringInput
+  purchaseFrom: ModelStringInput
+  status: ModelWarrantyStatusInput
+  registeredBy: ModelStringInput
+  dealerId: ModelStringInput
+  batteryProductId: ModelStringInput
+  and: [ModelWarrantyRegistrationConditionInput]
+  or: [ModelWarrantyRegistrationConditionInput]
+  not: ModelWarrantyRegistrationConditionInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+  owner: ModelStringInput
+}
+
+input CreateWarrantyRegistrationInput {
+  serialNumber: String!
+  purchaseDate: AWSDate!
+  expiryDate: AWSDate!
+  customerName: String!
+  customerEmail: String!
+  customerPhone: String
+  purchaseFrom: String
+  status: WarrantyStatus!
+  registeredBy: String!
+  dealerId: String
+  batteryProductId: String
+  id: ID
+}
+
+input UpdateWarrantyRegistrationInput {
+  serialNumber: String
+  purchaseDate: AWSDate
+  expiryDate: AWSDate
+  customerName: String
+  customerEmail: String
+  customerPhone: String
+  purchaseFrom: String
+  status: WarrantyStatus
+  registeredBy: String
+  dealerId: String
+  batteryProductId: String
+  id: ID!
+}
+
+input DeleteWarrantyRegistrationInput {
+  id: ID!
+}
+
+input ModelSubscriptionWarrantyRegistrationFilterInput {
+  serialNumber: ModelSubscriptionStringInput
+  purchaseDate: ModelSubscriptionStringInput
+  expiryDate: ModelSubscriptionStringInput
+  customerName: ModelSubscriptionStringInput
+  customerEmail: ModelSubscriptionStringInput
+  customerPhone: ModelSubscriptionStringInput
+  purchaseFrom: ModelSubscriptionStringInput
+  status: ModelSubscriptionStringInput
+  registeredBy: ModelSubscriptionStringInput
+  dealerId: ModelSubscriptionStringInput
+  batteryProductId: ModelSubscriptionStringInput
+  id: ModelSubscriptionIDInput
+  createdAt: ModelSubscriptionStringInput
+  updatedAt: ModelSubscriptionStringInput
+  and: [ModelSubscriptionWarrantyRegistrationFilterInput]
+  or: [ModelSubscriptionWarrantyRegistrationFilterInput]
+  owner: ModelStringInput
+}
+
+type ModelWarrantyClaimConnection @aws_iam @aws_cognito_user_pools {
+  items: [WarrantyClaim]!
+  nextToken: String
+}
+
+input ModelClaimStatusInput {
+  eq: ClaimStatus
+  ne: ClaimStatus
+}
+
+input ModelWarrantyClaimFilterInput {
+  warrantyRegistrationId: ModelStringInput
+  workshopId: ModelStringInput
+  failureDate: ModelStringInput
+  claimDate: ModelStringInput
+  failureDescription: ModelStringInput
+  status: ModelClaimStatusInput
+  resolutionDetails: ModelStringInput
+  adminNotes: ModelStringInput
+  id: ModelIDInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+  and: [ModelWarrantyClaimFilterInput]
+  or: [ModelWarrantyClaimFilterInput]
+  not: ModelWarrantyClaimFilterInput
+  owner: ModelStringInput
+}
+
+input ModelWarrantyClaimConditionInput {
+  warrantyRegistrationId: ModelStringInput
+  workshopId: ModelStringInput
+  failureDate: ModelStringInput
+  claimDate: ModelStringInput
+  failureDescription: ModelStringInput
+  status: ModelClaimStatusInput
+  resolutionDetails: ModelStringInput
+  adminNotes: ModelStringInput
+  and: [ModelWarrantyClaimConditionInput]
+  or: [ModelWarrantyClaimConditionInput]
+  not: ModelWarrantyClaimConditionInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+  owner: ModelStringInput
+}
+
+input CreateWarrantyClaimInput {
+  warrantyRegistrationId: String!
+  workshopId: String!
+  failureDate: AWSDate!
+  claimDate: AWSDate!
+  failureDescription: String!
+  status: ClaimStatus!
+  resolutionDetails: String
+  adminNotes: String
+  id: ID
+}
+
+input UpdateWarrantyClaimInput {
+  warrantyRegistrationId: String
+  workshopId: String
+  failureDate: AWSDate
+  claimDate: AWSDate
+  failureDescription: String
+  status: ClaimStatus
+  resolutionDetails: String
+  adminNotes: String
+  id: ID!
+}
+
+input DeleteWarrantyClaimInput {
+  id: ID!
+}
+
+input ModelSubscriptionWarrantyClaimFilterInput {
+  warrantyRegistrationId: ModelSubscriptionStringInput
+  workshopId: ModelSubscriptionStringInput
+  failureDate: ModelSubscriptionStringInput
+  claimDate: ModelSubscriptionStringInput
+  failureDescription: ModelSubscriptionStringInput
+  status: ModelSubscriptionStringInput
+  resolutionDetails: ModelSubscriptionStringInput
+  adminNotes: ModelSubscriptionStringInput
+  id: ModelSubscriptionIDInput
+  createdAt: ModelSubscriptionStringInput
+  updatedAt: ModelSubscriptionStringInput
+  and: [ModelSubscriptionWarrantyClaimFilterInput]
+  or: [ModelSubscriptionWarrantyClaimFilterInput]
+  owner: ModelStringInput
+}
