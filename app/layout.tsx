@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { ThemeProvider } from "./components/ThemeProvider";
+import { AmplifyProvider } from "./components/AmplifyProvider";
 import { Navbar } from "./components/layout/Navbar";
 import { Footer } from "./components/layout/Footer";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -33,11 +34,13 @@ export default function RootLayout({
     <html lang="en" className={`${fieldworkDemiBold.variable} ${fieldworkRegular.variable} ${fieldworkThin.variable} h-full`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col antialiased bg-background text-foreground">
         <ThemeProvider>
-          <ErrorBoundary>
-            <Navbar />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </ErrorBoundary>
+          <AmplifyProvider>
+            <ErrorBoundary>
+              <Navbar />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </ErrorBoundary>
+          </AmplifyProvider>
         </ThemeProvider>
       </body>
     </html>

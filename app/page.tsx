@@ -1,23 +1,59 @@
 "use client";
 
 import { useState } from "react";
+import { generateClient } from "aws-amplify/data";
+import type { Schema } from "@/amplify/data/resource";
 import { Input } from "./components/ui/Input";
 import { Button } from "./components/ui/Button";
-import { Card, CardHeader, CardTitle, CardContent } from "./components/ui/Card";
+import { Card, CardContent } from "./components/ui/Card";
 import { PhoneInput } from "./components/ui/PhoneInput";
+
+const client = generateClient<Schema>();
 
 export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    // TODO: Amplify Data - create WarrantyRegistration (public/unauthenticated)
-    setTimeout(() => {
+    setError("");
+
+    const form = new FormData(e.currentTarget);
+    const purchaseDate = form.get("purchaseDate") as string;
+
+    // Calculate expiry (24 months from purchase)
+    const expiry = new Date(purchaseDate);
+    expiry.setMonth(expiry.getMonth() + 24);
+    const expiryDate = expiry.toISOString().split("T")[0];
+
+    try {
+      const { errors } = await client.models.WarrantyRegistration.create(
+        {
+          serialNumber: form.get("serialNumber") as string,
+          purchaseDate,
+          expiryDate,
+          customerName: form.get("customerName") as string,
+          customerEmail: form.get("customerEmail") as string,
+          customerPhone: form.get("customerPhone") as string,
+          purchaseFrom: form.get("purchaseFrom") as string,
+          status: "ACTIVE",
+          registeredBy: "PUBLIC",
+        },
+        { authMode: "identityPool" }
+      );
+
+      if (errors) {
+        setError("Registration failed. Please try again.");
+      } else {
+        setSubmitted(true);
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
-      setSubmitted(true);
-    }, 1500);
+    }
   }
 
   if (submitted) {
@@ -38,7 +74,6 @@ export default function HomePage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <div className="flex flex-col items-center gap-3 mb-8 text-center">
-
         <h1 className="text-2xl font-bold text-foreground md:text-3xl uppercase">
           Product Registration
         </h1>
@@ -48,20 +83,19 @@ export default function HomePage() {
       </div>
 
       <Card>
-        {/* <CardHeader>
-          <CardTitle>Warranty Details</CardTitle>
-        </CardHeader> */}
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input id="serialNumber" label="Battery Serial Number" placeholder="e.g. CST-2024-XXXXX" required />
-            <Input id="purchaseDate" label="Purchase Date" type="date" required />
-            <Input id="purchaseFrom" label="Purchase From" placeholder="e.g. AutoParts Sdn Bhd" required />
+            <Input id="serialNumber" name="serialNumber" label="Battery Serial Number" placeholder="e.g. CST-2024-XXXXX" required />
+            <Input id="purchaseDate" name="purchaseDate" label="Purchase Date" type="date" required />
+            <Input id="purchaseFrom" name="purchaseFrom" label="Purchase From" placeholder="e.g. AutoParts Sdn Bhd" required />
 
-            {/* <hr className="border-border my-2" /> */}
-
-            <Input id="customerName" label="Full Name" placeholder="John Doe" required autoComplete="name" />
-            <Input id="customerEmail" label="Email" type="email" placeholder="you@example.com" required autoComplete="email" />
+            <Input id="customerName" name="customerName" label="Full Name" placeholder="John Doe" required autoComplete="name" />
+            <Input id="customerEmail" name="customerEmail" label="Email" type="email" placeholder="you@example.com" required autoComplete="email" />
             <PhoneInput id="customerPhone" label="Phone Number" required />
+
+            {error && (
+              <p className="text-sm text-destructive" role="alert">{error}</p>
+            )}
 
             <div className="pt-4">
               <Button type="submit" loading={loading} className="w-full">

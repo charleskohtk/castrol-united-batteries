@@ -51,7 +51,7 @@ const schema = a.schema({
       customerName: a.string().required(),
       customerEmail: a.string().required(),
       customerPhone: a.string(),
-      invoiceNumber: a.string().required(),
+      purchaseFrom: a.string(),
       status: a.ref("WarrantyStatus").required(),
       registeredBy: a.string().required(),
       dealerId: a.string(),
@@ -63,6 +63,7 @@ const schema = a.schema({
       index("dealerId"),
     ])
     .authorization((allow) => [
+      allow.guest().to(["create"]),
       allow.owner().to(["create", "read"]),
       allow.groups(["ADMIN"]).to(["create", "read", "update", "delete"]),
       allow.groups(["DEALER"]).to(["create", "read"]),
@@ -98,5 +99,8 @@ export const data = defineData({
   schema,
   authorizationModes: {
     defaultAuthorizationMode: "userPool",
+    apiKeyAuthorizationMode: {
+      expiresInDays: 365,
+    },
   },
 });

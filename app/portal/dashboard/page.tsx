@@ -1,28 +1,47 @@
-import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
+"use client";
 
-// TODO: Replace with Amplify Data query
-const mockRegistrations = [
-  { id: "1", serialNumber: "CST-2024-00123", customerName: "John Doe", customerEmail: "john@example.com", purchaseDate: "2024-06-10", expiryDate: "2026-06-10" },
-  { id: "2", serialNumber: "CST-2024-00456", customerName: "Jane Smith", customerEmail: "jane@example.com", purchaseDate: "2024-06-18", expiryDate: "2026-06-18" },
-  { id: "3", serialNumber: "CST-2024-00789", customerName: "Ahmad Bin Ali", customerEmail: "ahmad@example.com", purchaseDate: "2023-01-15", expiryDate: "2025-01-15" },
-];
+import { useEffect, useState } from "react";
+import { generateClient } from "aws-amplify/data";
+import type { Schema } from "@/amplify/data/resource";
+import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
+import { PageSkeleton } from "../../components/ui/Skeleton";
+
+const client = generateClient<Schema>();
+
+type Registration = Schema["WarrantyRegistration"]["type"];
 
 function getWarrantyStatus(expiryDate: string): "Active" | "Expired" {
   return new Date(expiryDate) >= new Date() ? "Active" : "Expired";
 }
 
 export default function PortalDashboardPage() {
-  const registrations = mockRegistrations.map((r) => ({
-    ...r,
-    status: getWarrantyStatus(r.expiryDate),
-  }));
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const activeCount = registrations.filter((r) => r.status === "Active").length;
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const { data } = await client.models.WarrantyRegistration.list();
+        setRegistrations(data || []);
+      } catch {
+        // Handle error silently for now
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (loading) return <PageSkeleton />;
+
+  const activeCount = registrations.filter(
+    (r) => getWarrantyStatus(r.expiryDate) === "Active"
+  ).length;
 
   const stats = [
     { label: "Active Warranties", value: String(activeCount) },
-    { label: "Pending Claims", value: "0" },
-    { label: "Registered Batteries", value: String(registrations.length) },
+    { label: "Total Registrations", value: String(registrations.length) },
+    { label: "Expired", value: String(registrations.length - activeCount) },
   ];
 
   return (
@@ -62,23 +81,26 @@ export default function PortalDashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {registrations.map((reg) => (
-                    <tr key={reg.id} className="border-b border-border">
-                      <td className="py-3 text-foreground font-mono text-xs">{reg.serialNumber}</td>
-                      <td className="py-3 text-foreground">{reg.customerName}</td>
-                      <td className="py-3 text-foreground hidden sm:table-cell">{reg.customerEmail}</td>
-                      <td className="py-3 text-foreground hidden md:table-cell">{reg.purchaseDate}</td>
-                      <td className="py-3">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                          reg.status === "Active"
-                            ? "bg-primary/10 text-primary"
-                            : "bg-destructive/10 text-destructive"
-                        }`}>
-                          {reg.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {registrations.map((reg) => {
+                    const status = getWarrantyStatus(reg.expiryDate);
+                    return (
+                      <tr key={reg.id} className="border-b border-border">
+                        <td className="py-3 text-foreground font-mono text-xs">{reg.serialNumber}</td>
+                        <td className="py-3 text-foreground">{reg.customerName}</td>
+                        <td className="py-3 text-foreground hidden sm:table-cell">{reg.customerEmail}</td>
+                        <td className="py-3 text-foreground hidden md:table-cell">{reg.purchaseDate}</td>
+                        <td className="py-3">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                            status === "Active"
+                              ? "bg-primary/10 text-primary"
+                              : "bg-destructive/10 text-destructive"
+                          }`}>
+                            {status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
