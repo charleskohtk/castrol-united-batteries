@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Input } from "./components/ui/Input";
 import { Button } from "./components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "./components/ui/Card";
+import { PhoneInput } from "./components/ui/PhoneInput";
 
 export default function HomePage() {
   const [loading, setLoading] = useState(false);
@@ -38,7 +39,7 @@ export default function HomePage() {
     <div className="mx-auto max-w-2xl px-4 py-12">
       <div className="flex flex-col items-center gap-3 mb-8 text-center">
 
-        <h1 className="text-2xl font-bold text-foreground md:text-3xl">
+        <h1 className="text-2xl font-bold text-foreground md:text-3xl uppercase">
           Product Registration
         </h1>
         <p className="text-muted-foreground max-w-md">
@@ -60,11 +61,11 @@ export default function HomePage() {
 
             <Input id="customerName" label="Full Name" placeholder="John Doe" required autoComplete="name" />
             <Input id="customerEmail" label="Email" type="email" placeholder="you@example.com" required autoComplete="email" />
-            <Input id="customerPhone" label="Phone Number" type="tel" placeholder="+6512345678" autoComplete="tel" />
+            <PhoneInput id="customerPhone" label="Phone Number" required />
 
             <div className="pt-4">
               <Button type="submit" loading={loading} className="w-full">
-                Register Warranty
+                Register Now
               </Button>
             </div>
           </form>
