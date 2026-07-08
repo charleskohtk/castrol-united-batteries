@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn, confirmSignIn } from "aws-amplify/auth";
+import { signIn, confirmSignIn, signOut } from "aws-amplify/auth";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 
@@ -22,6 +22,9 @@ export default function PortalLoginPage() {
     const password = form.get("password") as string;
 
     try {
+      // Clear any stale session before attempting sign-in
+      try { await signOut(); } catch { /* no-op */ }
+
       const { isSignedIn, nextStep } = await signIn({
         username: email,
         password,

@@ -5,8 +5,7 @@ import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
 import { PageSkeleton } from "../../components/ui/Skeleton";
-
-const client = generateClient<Schema>();
+import { formatDate } from "../../lib/format";
 
 type Registration = Schema["WarrantyRegistration"]["type"];
 
@@ -15,6 +14,7 @@ function getWarrantyStatus(expiryDate: string): "Active" | "Expired" {
 }
 
 export default function PortalDashboardPage() {
+  const client = generateClient<Schema>();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -88,7 +88,7 @@ export default function PortalDashboardPage() {
                         <td className="py-3 text-foreground font-mono text-xs">{reg.serialNumber}</td>
                         <td className="py-3 text-foreground">{reg.customerName}</td>
                         <td className="py-3 text-foreground hidden sm:table-cell">{reg.customerEmail}</td>
-                        <td className="py-3 text-foreground hidden md:table-cell">{reg.purchaseDate}</td>
+                        <td className="py-3 text-foreground hidden md:table-cell">{formatDate(reg.purchaseDate)}</td>
                         <td className="py-3">
                           <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
                             status === "Active"

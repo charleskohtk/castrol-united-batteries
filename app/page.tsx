@@ -1,19 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
 import { Input } from "./components/ui/Input";
 import { Button } from "./components/ui/Button";
 import { Card, CardContent } from "./components/ui/Card";
 import { PhoneInput } from "./components/ui/PhoneInput";
+import { Select } from "./components/ui/Select";
 
-const client = generateClient<Schema>();
+type Dealer = Schema["Dealer"]["type"];
 
 export default function HomePage() {
+  const client = generateClient<Schema>();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [dealers, setDealers] = useState<Dealer[]>([]);
+  const [selectedDealer, setSelectedDealer] = useState("");
+
+  useEffect(() => {
+    async function fetchDealers() {
+      try {
+        const { data } = await client.models.Dealer.list({
+          filter: { status: { eq: "ACTIVE" } },
+          authMode: "identityPool",
+        });
+        setDealers(data || []);
+      } catch {
+        // Dealers will show empty, user can still type manually
+      }
+    }
+    fetchDealers();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -22,11 +42,15 @@ export default function HomePage() {
 
     const form = new FormData(e.currentTarget);
     const purchaseDate = form.get("purchaseDate") as string;
+    const dealerId = selectedDealer;
 
     // Calculate expiry (24 months from purchase)
     const expiry = new Date(purchaseDate);
     expiry.setMonth(expiry.getMonth() + 24);
     const expiryDate = expiry.toISOString().split("T")[0];
+
+    // Get dealer name for denormalized storage
+    const dealer = dealers.find((d) => d.id === dealerId);
 
     try {
       const { errors } = await client.models.WarrantyRegistration.create(
@@ -37,7 +61,10 @@ export default function HomePage() {
           customerName: form.get("customerName") as string,
           customerEmail: form.get("customerEmail") as string,
           customerPhone: form.get("customerPhone") as string,
-          purchaseFrom: form.get("purchaseFrom") as string,
+          purchaseFrom: dealer?.name || "",
+          dealerId: dealerId || undefined,
+          dealerName: dealer?.name || undefined,
+          termsAcceptedAt: new Date().toISOString(),
           status: "ACTIVE",
           registeredBy: "PUBLIC",
         },
@@ -87,11 +114,37 @@ export default function HomePage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input id="serialNumber" name="serialNumber" label="Battery Serial Number" placeholder="e.g. CST-2024-XXXXX" required />
             <Input id="purchaseDate" name="purchaseDate" label="Purchase Date" type="date" required />
-            <Input id="purchaseFrom" name="purchaseFrom" label="Purchase From" placeholder="e.g. AutoParts Sdn Bhd" required />
+
+            <Select
+              id="dealerId"
+              label="Purchased From"
+              placeholder="Select a dealer"
+              options={[
+                ...dealers.map((d) => ({ value: d.id, label: `${d.name} — ${d.region}` })),
+                { value: "OTHER", label: "Other (not listed)" },
+              ]}
+              value={selectedDealer}
+              onChange={setSelectedDealer}
+            />
 
             <Input id="customerName" name="customerName" label="Full Name" placeholder="John Doe" required autoComplete="name" />
             <Input id="customerEmail" name="customerEmail" label="Email" type="email" placeholder="you@example.com" required autoComplete="email" />
             <PhoneInput id="customerPhone" label="Phone Number" required />
+
+            <label className="flex items-center justify-center align-center gap-3 cursor-pointer pt-4">
+              <input
+                type="checkbox"
+                name="terms"
+                required
+                className="h-6 w-6 border-border accent-primary"
+              />
+              <span className="text-sm text-muted-foreground">
+                I have read and agree to the{" "}
+                <Link href="/terms" target="_blank" className="text-primary underline hover:opacity-80">
+                  Terms &amp; Conditions
+                </Link>
+              </span>
+            </label>
 
             {error && (
               <p className="text-sm text-destructive" role="alert">{error}</p>

@@ -1,3 +1,6 @@
+"use client";
+
+import { Button as HUIButton } from "@headlessui/react";
 import { ButtonHTMLAttributes, forwardRef } from "react";
 
 type Variant = "primary" | "secondary" | "outline" | "ghost" | "destructive";
@@ -25,10 +28,10 @@ const sizes: Record<Size, string> = {
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = "primary", size = "lg", loading, children, disabled, className = "", ...props }, ref) => (
-    <button
+    <HUIButton
       ref={ref}
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center gap-2 rounded-[var(--radius)] font-bold text-base uppercase cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-[var(--radius)] font-bold text-base uppercase cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[disabled]:opacity-50 data-[disabled]:pointer-events-none ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
       {loading && (
@@ -38,7 +41,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         </svg>
       )}
       {children}
-    </button>
+    </HUIButton>
   )
 );
 

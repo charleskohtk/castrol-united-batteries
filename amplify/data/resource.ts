@@ -1,4 +1,5 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { createDealerUser } from "../functions/create-dealer-user/resource.js";
 
 const schema = a.schema({
   UserRole: a.enum([
@@ -15,6 +16,20 @@ const schema = a.schema({
   WarrantyStatus: a.enum(["ACTIVE", "EXPIRED", "VOIDED"]),
 
   ClaimStatus: a.enum(["PENDING", "APPROVED", "REJECTED"]),
+
+  Dealer: a
+    .model({
+      name: a.string().required(),
+      email: a.string().required(),
+      phone: a.string(),
+      region: a.string().required(),
+      status: a.ref("ProductStatus").required(),
+    })
+    .authorization((allow) => [
+      allow.guest().to(["read"]),
+      allow.groups(["ADMIN"]).to(["create", "read", "update", "delete"]),
+      allow.groups(["MANAGEMENT", "SALES", "DEALER", "WORKSHOP"]).to(["read"]),
+    ]),
 
   UserProfile: a
     .model({
@@ -52,6 +67,8 @@ const schema = a.schema({
       customerEmail: a.string().required(),
       customerPhone: a.string(),
       purchaseFrom: a.string(),
+      dealerName: a.string(),
+      termsAcceptedAt: a.datetime().required(),
       status: a.ref("WarrantyStatus").required(),
       registeredBy: a.string().required(),
       dealerId: a.string(),
@@ -91,6 +108,17 @@ const schema = a.schema({
       allow.groups(["MANAGEMENT", "SALES"]).to(["read"]),
       allow.owner().to(["read"]),
     ]),
+
+  createDealerUser: a
+    .mutation()
+    .arguments({
+      email: a.string().required(),
+      name: a.string().required(),
+      tempPassword: a.string().required(),
+    })
+    .returns(a.customType({ success: a.boolean(), message: a.string() }))
+    .authorization((allow) => [allow.groups(["ADMIN"])])
+    .handler(a.handler.function(createDealerUser)),
 });
 
 export type Schema = ClientSchema<typeof schema>;
