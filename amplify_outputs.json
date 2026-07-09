@@ -145,6 +145,13 @@
                 "rules": [
                   {
                     "allow": "public",
+                    "provider": "apiKey",
+                    "operations": [
+                      "read"
+                    ]
+                  },
+                  {
+                    "allow": "public",
                     "provider": "identityPool",
                     "operations": [
                       "read"
@@ -586,6 +593,13 @@
               "type": "auth",
               "properties": {
                 "rules": [
+                  {
+                    "allow": "public",
+                    "provider": "apiKey",
+                    "operations": [
+                      "create"
+                    ]
+                  },
                   {
                     "allow": "public",
                     "provider": "identityPool",

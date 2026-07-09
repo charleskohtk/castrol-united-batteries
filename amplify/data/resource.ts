@@ -26,6 +26,7 @@ const schema = a.schema({
       status: a.ref("ProductStatus").required(),
     })
     .authorization((allow) => [
+      allow.publicApiKey().to(["read"]),
       allow.guest().to(["read"]),
       allow.groups(["ADMIN"]).to(["create", "read", "update", "delete"]),
       allow.groups(["MANAGEMENT", "SALES", "DEALER", "WORKSHOP"]).to(["read"]),
@@ -80,6 +81,7 @@ const schema = a.schema({
       index("dealerId"),
     ])
     .authorization((allow) => [
+      allow.publicApiKey().to(["create"]),
       allow.guest().to(["create"]),
       allow.owner().to(["create", "read"]),
       allow.groups(["ADMIN"]).to(["create", "read", "update", "delete"]),

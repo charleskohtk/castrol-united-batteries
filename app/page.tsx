@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
@@ -8,7 +8,10 @@ import { Input } from "./components/ui/Input";
 import { Button } from "./components/ui/Button";
 import { Card, CardContent } from "./components/ui/Card";
 import { PhoneInput } from "./components/ui/PhoneInput";
-import { Select } from "./components/ui/Select";
+import { Combobox, ComboboxInput, ComboboxOption, ComboboxOptions, Field, Label } from "@headlessui/react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { format } from "date-fns";
 
 type Dealer = Schema["Dealer"]["type"];
 
@@ -18,14 +21,24 @@ export default function HomePage() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
   const [dealers, setDealers] = useState<Dealer[]>([]);
-  const [selectedDealer, setSelectedDealer] = useState("");
+  const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
+  const [dealerQuery, setDealerQuery] = useState("");
+  const [purchaseDate, setPurchaseDate] = useState<Date | null>(null);
+
+  const filteredDealers = useMemo(() => {
+    if (!dealerQuery) return dealers;
+    const q = dealerQuery.toLowerCase();
+    return dealers.filter(
+      (d) => d.name.toLowerCase().includes(q) || d.region.toLowerCase().includes(q)
+    );
+  }, [dealers, dealerQuery]);
 
   useEffect(() => {
     async function fetchDealers() {
       try {
         const { data } = await client.models.Dealer.list({
           filter: { status: { eq: "ACTIVE" } },
-          authMode: "identityPool",
+          authMode: "apiKey",
         });
         setDealers(data || []);
       } catch {
@@ -41,34 +54,39 @@ export default function HomePage() {
     setError("");
 
     const form = new FormData(e.currentTarget);
-    const purchaseDate = form.get("purchaseDate") as string;
-    const dealerId = selectedDealer;
+    if (!purchaseDate) {
+      setError("Please select a purchase date.");
+      setLoading(false);
+      return;
+    }
+    const purchaseDateStr = format(purchaseDate, "yyyy-MM-dd");
+    const dealerId = selectedDealer?.id || "";
 
     // Calculate expiry (24 months from purchase)
     const expiry = new Date(purchaseDate);
     expiry.setMonth(expiry.getMonth() + 24);
-    const expiryDate = expiry.toISOString().split("T")[0];
+    const expiryDate = format(expiry, "yyyy-MM-dd");
 
     // Get dealer name for denormalized storage
-    const dealer = dealers.find((d) => d.id === dealerId);
+    const dealer = selectedDealer;
 
     try {
       const { errors } = await client.models.WarrantyRegistration.create(
         {
           serialNumber: form.get("serialNumber") as string,
-          purchaseDate,
+          purchaseDate: purchaseDateStr,
           expiryDate,
           customerName: form.get("customerName") as string,
           customerEmail: form.get("customerEmail") as string,
           customerPhone: form.get("customerPhone") as string,
-          purchaseFrom: dealer?.name || "",
-          dealerId: dealerId || undefined,
+          purchaseFrom: dealer?.name || dealerQuery || "",
+          dealerId: dealer?.id || undefined,
           dealerName: dealer?.name || undefined,
           termsAcceptedAt: new Date().toISOString(),
           status: "ACTIVE",
           registeredBy: "PUBLIC",
         },
-        { authMode: "identityPool" }
+        { authMode: "apiKey" }
       );
 
       if (errors) {
@@ -113,19 +131,45 @@ export default function HomePage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input id="serialNumber" name="serialNumber" label="Battery Serial Number" placeholder="e.g. CST-2024-XXXXX" required />
-            <Input id="purchaseDate" name="purchaseDate" label="Purchase Date" type="date" required />
+            <Field className="flex flex-col gap-2">
+              <Label className="text-base font-bold text-foreground">Purchase Date</Label>
+              <DatePicker
+                selected={purchaseDate}
+                onChange={(date: Date | null) => setPurchaseDate(date)}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="DD/MM/YYYY"
+                maxDate={new Date()}
+                className="w-full rounded-[var(--radius)] border border-input bg-background px-3 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                required
+              />
+            </Field>
 
-            <Select
-              id="dealerId"
-              label="Purchased From"
-              placeholder="Select a dealer"
-              options={[
-                ...dealers.map((d) => ({ value: d.id, label: `${d.name} — ${d.region}` })),
-                { value: "OTHER", label: "Other (not listed)" },
-              ]}
-              value={selectedDealer}
-              onChange={setSelectedDealer}
-            />
+            <Field className="flex flex-col gap-2">
+              <Label className="text-base font-bold text-foreground">Purchased From</Label>
+              <Combobox value={selectedDealer} onChange={setSelectedDealer} onClose={() => setDealerQuery("")}>
+                <div className="relative mb-2">
+                  <ComboboxInput
+                    className="w-full rounded-[var(--radius)] border border-input bg-background px-3 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="Type to search dealer..."
+                    displayValue={(d: Dealer | null) => d?.name || ""}
+                    onChange={(e) => setDealerQuery(e.target.value)}
+                  />
+                  {filteredDealers.length > 0 && (
+                    <ComboboxOptions className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-[var(--radius)] border border-input bg-background py-1 text-base shadow-lg focus:outline-none">
+                      {filteredDealers.map((dealer) => (
+                        <ComboboxOption
+                          key={dealer.id}
+                          value={dealer}
+                          className="cursor-pointer select-none py-2.5 px-3 data-[focus]:bg-secondary text-foreground"
+                        >
+                          {dealer.name} — {dealer.region}
+                        </ComboboxOption>
+                      ))}
+                    </ComboboxOptions>
+                  )}
+                </div>
+              </Combobox>
+            </Field>
 
             <Input id="customerName" name="customerName" label="Full Name" placeholder="John Doe" required autoComplete="name" />
             <Input id="customerEmail" name="customerEmail" label="Email" type="email" placeholder="you@example.com" required autoComplete="email" />
