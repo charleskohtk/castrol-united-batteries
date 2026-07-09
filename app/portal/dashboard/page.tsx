@@ -9,7 +9,8 @@ import { formatDate } from "../../lib/format";
 
 type Registration = Schema["WarrantyRegistration"]["type"];
 
-function getWarrantyStatus(expiryDate: string): "Active" | "Expired" {
+function getWarrantyStatus(expiryDate: string | null | undefined): "Active" | "Expired" {
+  if (!expiryDate) return "Expired";
   return new Date(expiryDate) >= new Date() ? "Active" : "Expired";
 }
 
@@ -88,7 +89,7 @@ export default function PortalDashboardPage() {
                         <td className="py-3 text-foreground font-mono text-xs">{reg.serialNumber}</td>
                         <td className="py-3 text-foreground">{reg.customerName}</td>
                         <td className="py-3 text-foreground hidden sm:table-cell">{reg.customerEmail}</td>
-                        <td className="py-3 text-foreground hidden md:table-cell">{formatDate(reg.purchaseDate)}</td>
+                        <td className="py-3 text-foreground hidden md:table-cell">{reg.purchaseDate ? formatDate(reg.purchaseDate) : "—"}</td>
                         <td className="py-3">
                           <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
                             status === "Active"

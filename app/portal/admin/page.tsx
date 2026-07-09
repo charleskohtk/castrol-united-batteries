@@ -16,7 +16,8 @@ type Registration = Schema["WarrantyRegistration"]["type"];
 
 const tabs = ["Dealers", "Warranties", "Users", "Products", "Claims"] as const;
 
-function getWarrantyStatus(expiryDate: string): "Active" | "Expired" {
+function getWarrantyStatus(expiryDate: string | null | undefined): "Active" | "Expired" {
+  if (!expiryDate) return "Expired";
   return new Date(expiryDate) >= new Date() ? "Active" : "Expired";
 }
 
@@ -269,8 +270,8 @@ function WarrantiesByDealer({
                         <td className="py-3 text-foreground font-mono text-xs">{reg.serialNumber}</td>
                         <td className="py-3 text-foreground">{reg.customerName}</td>
                         <td className="py-3 text-foreground hidden sm:table-cell">{reg.dealerName || reg.purchaseFrom || "—"}</td>
-                        <td className="py-3 text-foreground hidden md:table-cell">{formatDate(reg.purchaseDate)}</td>
-                        <td className="py-3 text-foreground hidden md:table-cell">{formatDate(reg.expiryDate)}</td>
+                        <td className="py-3 text-foreground hidden md:table-cell">{reg.purchaseDate ? formatDate(reg.purchaseDate) : "—"}</td>
+                        <td className="py-3 text-foreground hidden md:table-cell">{reg.expiryDate ? formatDate(reg.expiryDate) : "—"}</td>
                         <td className="py-3">
                           <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
                             status === "Active"
