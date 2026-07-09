@@ -3,15 +3,18 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { getCurrentUser, signOut, fetchUserAttributes } from "aws-amplify/auth";
-import { ChevronRight, Sun, Moon, LayoutDashboard, ShieldCheck, Settings, LogOut, ArrowLeft } from "lucide-react";
+import { getCurrentUser, signOut, fetchUserAttributes, fetchAuthSession } from "aws-amplify/auth";
+import { ChevronRight, Sun, Moon, LayoutDashboard, ShieldCheck, Settings, LogOut, ArrowLeft, ClipboardList } from "lucide-react";
 import { useTheme } from "../components/ThemeProvider";
 import { PageSkeleton } from "../components/ui/Skeleton";
 
-const navItems = [
-  { href: "/portal/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/portal/admin", label: "Admin", icon: ShieldCheck },
-  { href: "/portal/settings", label: "Settings", icon: Settings },
+const adminRoutes = ["/portal/dashboard", "/portal/admin"];
+
+const allNavItems = [
+  { href: "/portal/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true },
+  { href: "/portal/registrations", label: "Registrations", icon: ClipboardList, adminOnly: false },
+  { href: "/portal/admin", label: "Admin", icon: ShieldCheck, adminOnly: true },
+  { href: "/portal/settings", label: "Settings", icon: Settings, adminOnly: false },
 ];
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -21,6 +24,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   const [authenticated, setAuthenticated] = useState(false);
   const [checking, setChecking] = useState(true);
   const [userEmail, setUserEmail] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (pathname === "/portal/login") {
@@ -32,9 +36,20 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
       .then(async () => {
         setAuthenticated(true);
         try {
-          const attrs = await fetchUserAttributes();
+          const [attrs, session] = await Promise.all([
+            fetchUserAttributes(),
+            fetchAuthSession(),
+          ]);
           setUserEmail(attrs.email || "");
-        } catch { /* fallback: no email */ }
+          const groups = (session.tokens?.accessToken?.payload["cognito:groups"] as string[]) || [];
+          const admin = groups.includes("ADMIN") || groups.includes("MANAGEMENT");
+          setIsAdmin(admin);
+
+          // Redirect dealers away from admin-only routes
+          if (!admin && adminRoutes.includes(pathname)) {
+            router.replace("/portal/registrations");
+          }
+        } catch { /* fallback */ }
       })
       .catch(() => router.replace("/portal/login"))
       .finally(() => setChecking(false));
@@ -79,7 +94,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
           </div> */}
 
           <nav className="flex flex-col flex-1" aria-label="Portal navigation">
-            {navItems.map((item) => {
+            {allNavItems.filter((item) => !item.adminOnly || isAdmin).map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link

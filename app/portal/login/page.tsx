@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn, confirmSignIn, signOut } from "aws-amplify/auth";
+import { signIn, confirmSignIn, signOut, fetchAuthSession } from "aws-amplify/auth";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 
@@ -31,7 +31,13 @@ export default function PortalLoginPage() {
       });
 
       if (isSignedIn) {
-        router.push("/portal/dashboard");
+        const session = await fetchAuthSession();
+        const groups = (session.tokens?.accessToken?.payload["cognito:groups"] as string[]) || [];
+        if (groups.includes("ADMIN") || groups.includes("MANAGEMENT")) {
+          router.push("/portal/dashboard");
+        } else {
+          router.push("/portal/registrations");
+        }
       } else if (nextStep?.signInStep === "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED") {
         setNeedsNewPassword(true);
       } else if (nextStep?.signInStep === "CONFIRM_SIGN_UP") {
@@ -68,7 +74,13 @@ export default function PortalLoginPage() {
       });
 
       if (isSignedIn) {
-        router.push("/portal/dashboard");
+        const session = await fetchAuthSession();
+        const groups = (session.tokens?.accessToken?.payload["cognito:groups"] as string[]) || [];
+        if (groups.includes("ADMIN") || groups.includes("MANAGEMENT")) {
+          router.push("/portal/dashboard");
+        } else {
+          router.push("/portal/registrations");
+        }
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to set new password.";

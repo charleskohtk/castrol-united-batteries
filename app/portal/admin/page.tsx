@@ -29,6 +29,7 @@ export default function PortalAdminPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [region, setRegion] = useState("");
+  const [onboardError, setOnboardError] = useState("");
 
   useEffect(() => {
     async function fetchData() {
@@ -51,6 +52,7 @@ export default function PortalAdminPage() {
   async function handleCreateDealer(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitting(true);
+    setOnboardError("");
     const form = new FormData(e.currentTarget);
     const name = form.get("name") as string;
     const email = form.get("email") as string;
@@ -72,11 +74,20 @@ export default function PortalAdminPage() {
         tempPassword,
       });
 
-      if (data) setDealers((prev) => [...prev, data]);
+      // Create UserProfile linking this user to their dealer
+      if (data) {
+        await client.models.UserProfile.create({
+          email,
+          name,
+          role: "DEALER",
+          workshopOrDealerId: data.id,
+        });
+        setDealers((prev) => [...prev, data]);
+      }
       (e.target as HTMLFormElement).reset();
       setRegion("");
-    } catch {
-      // Handle error
+    } catch (err: unknown) {
+      setOnboardError(err instanceof Error ? err.message : "Failed to onboard dealer.");
     } finally {
       setSubmitting(false);
     }
@@ -127,6 +138,9 @@ export default function PortalAdminPage() {
                 <PhoneInput id="dealerPhone" label="Phone Number" onCountryChange={setRegion} />
                 <Input id="region" name="region" label="Region / Area" placeholder="e.g. Singapore" required value={region} onChange={(e) => setRegion(e.target.value)} />
                 <Input id="tempPassword" name="tempPassword" label="Temporary Password" type="password" placeholder="Min 8 chars, upper+lower+number+symbol" required />
+                {onboardError && (
+                  <p className="text-sm text-destructive" role="alert">{onboardError}</p>
+                )}
                 <Button type="submit" loading={submitting}>
                   {submitting ? "Sending" : "Onboard Dealer"}
                 </Button>

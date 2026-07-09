@@ -12,7 +12,7 @@ export function Navbar() {
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
       <nav className="mx-auto flex max-w-full items-center justify-between px-8 py-6" aria-label="Main navigation">
         <Link href="/" aria-label="Castrol Warranty Home">
-          <Image src="/castrol-logo.svg" alt="Castrol" width={148} height={48} priority />
+          <Image src="/castrol-logo.svg" alt="Castrol" width={158} height={48} priority />
         </Link>
 
         <button
