@@ -77,6 +77,7 @@ export default function PortalDashboardPage() {
                     <th className="pb-3 font-medium text-muted-foreground">Serial Number</th>
                     <th className="pb-3 font-medium text-muted-foreground">Customer</th>
                     <th className="pb-3 font-medium text-muted-foreground hidden sm:table-cell">Email</th>
+                    <th className="pb-3 font-medium text-muted-foreground hidden sm:table-cell">Dealer</th>
                     <th className="pb-3 font-medium text-muted-foreground hidden md:table-cell">Purchase Date</th>
                     <th className="pb-3 font-medium text-muted-foreground">Status</th>
                   </tr>
@@ -89,6 +90,7 @@ export default function PortalDashboardPage() {
                         <td className="py-3 text-foreground font-mono text-xs">{reg.serialNumber}</td>
                         <td className="py-3 text-foreground">{reg.customerName}</td>
                         <td className="py-3 text-foreground hidden sm:table-cell">{reg.customerEmail}</td>
+                        <td className="py-3 text-foreground hidden sm:table-cell">{reg.dealerName || reg.purchaseFrom || "—"}</td>
                         <td className="py-3 text-foreground hidden md:table-cell">{reg.purchaseDate ? formatDate(reg.purchaseDate) : "—"}</td>
                         <td className="py-3">
                           <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${

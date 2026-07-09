@@ -12,7 +12,7 @@ const adminRoutes = ["/portal/dashboard", "/portal/admin"];
 
 const allNavItems = [
   { href: "/portal/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true },
-  { href: "/portal/registrations", label: "Registrations", icon: ClipboardList, adminOnly: false },
+  { href: "/portal/registrations", label: "Registrations", icon: ClipboardList, adminOnly: false, dealerOnly: true },
   { href: "/portal/admin", label: "Admin", icon: ShieldCheck, adminOnly: true },
   { href: "/portal/settings", label: "Settings", icon: Settings, adminOnly: false },
 ];
@@ -94,7 +94,11 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
           </div> */}
 
           <nav className="flex flex-col flex-1" aria-label="Portal navigation">
-            {allNavItems.filter((item) => !item.adminOnly || isAdmin).map((item) => {
+            {allNavItems.filter((item) => {
+              if (item.adminOnly && !isAdmin) return false;
+              if (item.dealerOnly && isAdmin) return false;
+              return true;
+            }).map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchAuthSession } from "aws-amplify/auth";
+import { fetchAuthSession, fetchUserAttributes } from "aws-amplify/auth";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
 import { formatDate } from "../../lib/format";
@@ -31,19 +31,19 @@ export default function DealerRegistrationsPage() {
           const { data } = await client.models.WarrantyRegistration.list();
           setRegistrations(data || []);
         } else {
-          // Dealer: find their dealer profile, then filter registrations
-          const { data: profiles } = await client.models.UserProfile.list();
-          const profile = profiles?.[0];
-          const dealerId = profile?.workshopOrDealerId;
+          // Dealer: match by email to find their dealer record
+          const attrs = await fetchUserAttributes();
+          const email = attrs.email || "";
 
-          if (dealerId) {
-            // Fetch dealer name
-            const { data: dealer } = await client.models.Dealer.get({ id: dealerId });
-            if (dealer) setDealerName(dealer.name);
+          const { data: dealerList } = await client.models.Dealer.list({
+            filter: { email: { eq: email } },
+          });
+          const dealer = dealerList?.[0];
 
-            // Fetch registrations for this dealer
+          if (dealer) {
+            setDealerName(dealer.name);
             const { data } = await client.models.WarrantyRegistration.list({
-              filter: { dealerId: { eq: dealerId } },
+              filter: { dealerId: { eq: dealer.id } },
             });
             setRegistrations(data || []);
           }
@@ -62,9 +62,9 @@ export default function DealerRegistrationsPage() {
   return (
     <div className="p-6 md:p-10">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground uppercase">My Registrations</h1>
+        <h1 className="text-2xl font-bold text-foreground uppercase">Registrations</h1>
         {dealerName && (
-          <p className="text-sm text-muted-foreground mt-1">{dealerName}</p>
+          <p className="text-xl font-bold text-muted-foreground mt-1">{dealerName}</p>
         )}
       </div>
 
